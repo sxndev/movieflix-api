@@ -21,11 +21,23 @@ app.get("/movies", async (_, res) => {
 });
 
 app.post("/movies", async (req, res) => {
-  console.log(`Conteúdo do body da requisição ${req.body.title}`);
 
   const { title, genre_id, language_id, oscar_count, realease_date } = req.body;
 
   try {
+    // case insensitive - se a busca for feita por john wick, John wickl ou JOHN WICK, o registro vai ser retornado na consulta
+
+    // case sensitive - se buscar por john wick e no banco estiver como John wick, não vai ser retornado ma consulta
+    const movieWithSameTitle = await prisma.movie.findFirst({
+      where: { title: { equals: title, mode: "insensitive" } }
+    });
+
+    if (movieWithSameTitle) {
+      return res
+        .status(409)
+        .send({ message: "Já existe um filme cadastrado com esse título" });
+    }
+
     await prisma.movie.create({
       data: {
         title,
@@ -37,7 +49,7 @@ app.post("/movies", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send({ mensage: "falha ao cadastrar um filme" });
+    res.status(500).send({ message: "falha ao cadastrar um filme" });
     return;
   }
   res.status(201).send("Filme criado");
