@@ -9,13 +9,13 @@ app.use(express.json());
 
 app.get("/movies", async (_, res) => {
   const movies = await prisma.movie.findMany({
-    orderBy: {
-      title: "asc",
+    orderBy: { // define como os filmes devem ser ordenados
+      title: "asc"
     },
-    include: {
+    include: { // inclui as relações entre tabelas do banco de dados
       genres: true,
-      languages: true,
-    },
+      languages: true
+    }
   });
   res.json(movies);
 });
@@ -28,8 +28,13 @@ app.post("/movies", async (req, res) => {
 
     // case sensitive - se buscar por john wick e no banco estiver como John wick, não vai ser retornado ma consulta
 
+
+    // o case insensitive serve para garantir que as buscas sejam feitas independente se as letras forem maiúsculas ou minúsculas
+
+    
     const movieWithSameTitle = await prisma.movie.findFirst({
-      where: { title: { equals: title, mode: "insensitive" } },
+      where: { title: { equals: title, mode: "insensitive" }}
+      // a propriedade equals serve para dizer ao prisma que o valor no banco de dados deve ser igual o que foi passado na requisição
     });
 
     if (movieWithSameTitle) {
@@ -38,14 +43,18 @@ app.post("/movies", async (req, res) => {
         .send({ message: "Já existe um filme cadastrado com esse título" });
     }
 
+    // como os nomes dos tipos de dados são os mesmo que eu recebo da requisição, não preciso definir uma chave e valor quando for passar esses valores para o "data"
+
+    // por exemplo, eu não preciso escrever title: title, só o title já basta
+
     await prisma.movie.create({
       data: {
         title,
         genre_id,
         language_id,
         oscar_count,
-        realease_date: new Date(realease_date),
-      },
+        realease_date: new Date(realease_date)
+      }
     });
   } catch (error) {
     console.log(error);
@@ -60,43 +69,39 @@ app.put("/movies/:id", async (req, res) => {
 
   try {
     const movie = await prisma.movie.findUnique({
-      where: {
-        id,
-      },
+      where: { id } // busca um único filme pelo id
     });
 
     if (!movie) {
       return res.status(404).send({ message: "Filme não encontrado" });
     }
-    const data = { ...req.body };
+    const data = { ...req.body }; // cria um novo objeto com todos os campos enviados, que será usado na atualização do registro
+
+    // se a data do filme for passada, o código pega ela e transforma numa propriedade de data para o Typescript não interpretar ela como uma string e dar erro no banco, caso não seja passada, o valor retornado é "undefined"
+
     data.realease_date = data.realease_date
       ? new Date(data.realease_date)
       : undefined;
 
-    console.log(data);
-    // pegar o id do registro que será atualizado
-
-    // pegar os dados do filme que será atualizado e atualizar ele no prisma
     await prisma.movie.update({
       where: {
-        id,
+        id
       },
       data: data,
     });
+    res.status(200).send("Filme atualizado");
   } catch (error) {
     console.log(error);
     res.status(500).send({ message: "Falha ao atualizar o registro do filme" });
   }
-  // retornar o status correto informando que o filme foi atualizado
 
-  res.status(200).send("Filme atualizado");
 });
 
 app.delete("/movies/:id", async (req, res) => {
   const id = Number(req.params.id);
 
   try {
-    const movie = await prisma.movie.findUnique({ where: { id } });
+    const movie = await prisma.movie.findUnique({ where: { id } }); // busca um unico filme pelo id
 
     if (!movie) {
       return res.status(404).send({ message: "Filme não encontrado" });
@@ -124,10 +129,10 @@ app.get("/movies/:genreName", async (req, res) => {
         genres: {
           name: {
             equals: req.params.genreName,
-            mode: "insensitive",
-          },
-        },
-      },
+            mode: "insensitive", 
+          }
+        }
+      }
     });
     res.status(200).send(moviesFilteredByGenreName);
   } catch (error) {
