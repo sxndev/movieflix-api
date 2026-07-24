@@ -98,7 +98,7 @@
       "get": {
         "tags": ["Movie"],
         "summary": "Filtrar filmes por gênero",
-         "parameters": [
+        "parameters": [
           {
             "name": "genreName",
             "in": "path",
@@ -109,9 +109,9 @@
             }
           }
         ],
-         "responses": {
+        "responses": {
           "200": {
-              "content": {
+            "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
